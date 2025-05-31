@@ -28,24 +28,42 @@ st.write(f"데이터 조회 기간: {start_date.date()} ~ {end_date.date()}")
 @st.cache_data(show_spinner=True)
 def load_data(ticker, start, end):
     try:
+        # yfinance에서 데이터 다운로드
         df = yf.download(ticker, start=start, end=end)
         if df.empty:
             st.warning(f"{ticker} 데이터를 가져올 수 없습니다.")
             return None
+        
         df.reset_index(inplace=True)
-        # 'Date'와 'Close' 컬럼이 반드시 있어야 함
+        # 디버그: 원본 컬럼 확인
+        st.write(f"{ticker} 원본 컬럼:", df.columns.tolist())
+        
+        # 만약 'Date' 컬럼이 없다면, 인덱스에서 나온 첫 번째 컬럼을 'Date'로 지정
+        if 'Date' not in df.columns:
+            df.rename(columns={df.columns[0]: 'Date'}, inplace=True)
+        
+        # 'Close' 컬럼이 존재하지 않으면, 'Adj Close' 컬럼을 대신 사용
+        if 'Close' not in df.columns:
+            if 'Adj Close' in df.columns:
+                df.rename(columns={'Adj Close': 'Close'}, inplace=True)
+            else:
+                st.warning(f"{ticker} 데이터에 Close 또는 Adj Close 컬럼이 존재하지 않습니다.")
+                return None
+        
+        # 필요한 컬럼만 가져오기
         df = df[['Date', 'Close']].copy()
         df['Ticker'] = ticker
-        # Date 컬럼을 datetime 형식으로 변환
-        df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-        # Close 값에 NaN이 있는 행 제거
-        df.dropna(subset=["Close", "Date"], inplace=True)
+        
+        # Date 컬럼을 datetime 형식으로 변환 (문제가 있는 값은 제거)
+        df['Date'] = pd.to_datetime(df['Date'], errors="coerce")
+        df.dropna(subset=["Date", "Close"], inplace=True)
         return df
+
     except Exception as e:
         st.error(f"{ticker} 데이터를 가져오는 중 오류 발생: {e}")
         return None
 
-# 모든 티커 데이터를 하나의 DataFrame으로 결합
+# 모든 티커 데이터를 조회해서 하나의 DataFrame으로 결합
 all_data = pd.DataFrame()
 for tic in tickers:
     df_tic = load_data(tic, start_date, end_date)
@@ -57,14 +75,14 @@ if all_data.empty:
     st.error("모든 기업의 데이터를 불러올 수 없습니다. 네트워크 상태 또는 티커 목록을 확인하세요!")
     st.stop()
 
-# 데이터프레임 확인: 컬럼, 데이터 타입, 미리보기 
-st.write("데이터프레임 컬럼:", all_data.columns.tolist())
+# 데이터프레임 최종 확인: 컬럼, 데이터 유형, 일부 데이터 미리보기
+st.write("결합된 데이터프레임 컬럼:", all_data.columns.tolist())
 st.write("데이터프레임 정보:")
 st.write(all_data.dtypes)
 st.write("데이터 미리보기:")
 st.write(all_data.head())
 
-# Plotly로 인터랙티브 라인 차트 생성 (예외 처리 추가)
+# Plotly를 이용해 인터랙티브 라인 차트 생성 (예외 처리 포함)
 try:
     fig = px.line(
         all_data,
