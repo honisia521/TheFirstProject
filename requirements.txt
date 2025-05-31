@@ -1,4 +1,3 @@
-plotly
 folium
 koreanize_matplotlib
 streamlit-folium
@@ -13,7 +12,8 @@ yfinance
 
 streamlit>=1.30.0 plotly>=5.20.0 pandas>=2.2.0 yfinance>=0.2.36
 
-streamlit
-yfinance
-plotly
-pandas
+streamlit==1.25.0
+yfinance==0.2.19
+plotly==5.15.0
+pandas==1.5.3
+
