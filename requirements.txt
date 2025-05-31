@@ -2,3 +2,9 @@ plotly
 folium
 koreanize_matplotlib
 streamlit-folium
+
+
+streamlit>=1.30.0
+plotly>=5.20.0
+pandas>=2.2.0
+
