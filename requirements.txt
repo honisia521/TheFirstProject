@@ -9,3 +9,6 @@ plotly>=5.20.0
 pandas>=2.2.0
 
 yfinance
+
+
+streamlit>=1.30.0 plotly>=5.20.0 pandas>=2.2.0 yfinance>=0.2.36
